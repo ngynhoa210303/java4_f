@@ -1,0 +1,13 @@
+INSERT INTO [Order] VALUES (GETDATE(), '123456789')
+SELECT * FROM [Order] ORDER BY OrderId DESC
+
+SELECT * FROM Product WHERE ProductId = 3333
+INSERT INTO OrderDetail VALUES (3001,3333,100,6505452)
+INSERT INTO OrderDetail VALUES (3001,3334,100,dbo.GetPrice(3334))
+
+DECLARE @ProductId INT 
+SET @ProductId = 3336
+INSERT INTO OrderDetail VALUES (3001,@ProductId,100,dbo.GetPrice(@ProductId))
+
+
+

@@ -1,0 +1,9 @@
+ALTER FUNCTION HienThiTien
+(
+	@Tien MONEY 
+)
+RETURNS VARCHAR(MAX)
+AS
+BEGIN
+	RETURN CAST(@Tien AS varchar) + 'VND'
+END
