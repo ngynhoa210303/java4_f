@@ -1,0 +1,106 @@
+﻿CREATE DATABASE LTD2
+GO
+USE LTD2
+GO
+
+CREATE TABLE SinhVien(
+	MaSV INT IDENTITY(1,1) NOT NULL,
+	HoTen NVARCHAR(50),
+	NgaySinh DATE,
+	GioiTinh BIT,
+	Lop NVARCHAR(50)
+);
+GO
+
+CREATE TABLE Diem(
+	MaSV INT NOT NULL,
+	MaMonHoc INT IDENTITY(1,1) NOT NULL,
+	DiemLan1 INT,
+	DiemLan2 INT
+);
+GO
+
+ALTER TABLE SinhVien ADD CONSTRAINT PK_SinhVien PRIMARY KEY (MaSV);
+ALTER TABLE Diem ADD CONSTRAINT PK_Diem PRIMARY KEY (MaMonHoc);
+
+ALTER TABLE Diem ADD CONSTRAINT FK_Diem_SinhVien FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV);
+
+--Cau 2
+CREATE PROCEDURE InsertSinhVien
+	@HoTen NVARCHAR(50),
+	@NgaySinh DATE,
+	@GioiTinh BIT,
+	@Lop NVARCHAR(50)
+AS
+BEGIN
+	IF @HoTen IS NULL OR @NgaySinh IS NULL OR @GioiTinh IS NULL OR @Lop IS NULL
+		PRINT 'Cac thong tin tren khong duoc null'
+	ELSE
+		INSERT INTO SinhVien VALUES (@HoTen,@NgaySinh,@GioiTinh,@Lop);
+		PRINT 'Insert thanh cong'
+END
+
+CREATE PROCEDURE InsertDiem
+	@MaSV INT,
+	@DiemLan1 INT,
+	@DiemLan2 INT
+AS
+BEGIN
+	IF @MaSV IS NULL OR @DiemLan1 IS NULL OR @DiemLan2 IS NULL
+		PRINT 'Cac thong tin tren khong duoc null'
+	ELSE
+		INSERT INTO Diem VALUES (@MaSV,@DiemLan1,@DiemLan2);
+		PRINT 'Insert thanh cong'
+END
+
+--Cau 3
+CREATE FUNCTION Cau3(@MaSV INT)
+RETURNS TABLE
+AS
+RETURN ( SELECT MaMonHoc,DiemLan1,DiemLan2 FROM Diem WHERE MaSV = @MaSV)
+GO
+
+--Cau 4
+CREATE PROCEDURE Cau4
+	@SoLuotThi INT
+AS
+BEGIN
+	DECLARE @SinhVien TABLE (MaSV INT)
+	INSERT INTO @SinhVien 
+	SELECT Diem.MaSV, COUNT(DiemLan1) + COUNT(DiemLan2) FROM Diem INNER JOIN SinhVien ON SinhVien.MaSV = Diem.MaSV
+	GROUP BY Diem.MaSV
+	HAVING COUNT(DiemLan1) + COUNT(DiemLan2) > @SoLuotThi
+	DELETE FROM Diem WHERE MaSV IN (SELECT MaSV FROM @SinhVien)
+	DELETE FROM SinhVien WHERE MaSV IN (SELECT MaSV FROM @SinhVien)
+END
+
+--Cau 5
+CREATE VIEW view_5
+AS
+SELECT TOP 2 Diem.MaMonHoc, COUNT(DiemLan1) + COUNT(DiemLan2) as N'Số lần thi' 
+FROM Diem GROUP BY MaMonHoc ORDER BY COUNT(DiemLan1) + COUNT(DiemLan2) DESC
+SELECT * FROM view_5
+
+--Cau 4
+CREATE PROC sp_4 
+	@luot INT
+AS
+BEGIN 
+DECLARE @bang TABLE(MaSV NVARCHAR(10))
+INSERT INTO @bang
+SELECT MaSV FROM DIEM 
+GROUP BY MaSV
+HAVING(COUNT(DiemLan1) + COUNT(DiemLan2)) > @luot
+BEGIN TRY
+BEGIN TRAN
+DELETE FROM DIEM WHERE MaSV IN(SELECT * FROM @bang)
+DELETE FROM SINHVIEN WHERE MaSV IN(SELECT * FROM @bang)
+PRINT N'Xóa thành công'
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+ROLLBACK TRAN
+PRINT 'Xóa không thành công'
+END CATCH
+END
+EXEC sp_4 1
